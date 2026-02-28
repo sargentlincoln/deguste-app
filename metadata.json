@@ -1,0 +1,9 @@
+{
+  "name": "Deguste",
+  "description": "An intelligent gastronomic discovery app featuring AI recommendations, social discovery, and gamified rewards.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
