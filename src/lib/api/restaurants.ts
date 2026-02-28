@@ -57,6 +57,128 @@ export async function getRestaurantById(id: string): Promise<Restaurant | null> 
     });
 }
 
+const RANKING_CONFIGS = [
+    { title: 'Top 5 Pizzarias', emoji: '🍕', categoryFilter: 'Pizzaria' },
+    { title: 'Melhores Avaliados', emoji: '⭐', categoryFilter: '' },
+    { title: 'Top 5 Hamburguerias', emoji: '🍔', categoryFilter: 'Hamburgueria' },
+    { title: 'Top 5 Japonesa', emoji: '🍣', categoryFilter: 'Japonesa' },
+    { title: 'Top 5 Bares', emoji: '🍺', categoryFilter: 'Bar' },
+];
+
+export async function getHomeFeed(lat?: number | null, lng?: number | null) {
+    if (!supabase) {
+        return {
+            highlights: MOCK_RESTAURANTS.slice(0, 3),
+            promotions: MOCK_COUPONS,
+            videos: MOCK_VIDEOS.map(v => ({ ...v, restaurant: MOCK_RESTAURANTS.find(r => r.id === v.restaurant_id) })),
+            rankings: [] as RankedCategory[]
+        };
+    }
+
+    let allRestaurants: Restaurant[] = [];
+
+    if (lat != null && lng != null) {
+        const { data, error } = await supabase.rpc('get_nearby_restaurants', {
+            user_lat: lat,
+            user_lng: lng
+        });
+        if (error) {
+            console.error('Error fetching nearby home feed:', error);
+        } else {
+            allRestaurants = data as Restaurant[];
+        }
+    } else {
+        const { data } = await supabase.from('restaurants').select('*').eq('status', 'active');
+        allRestaurants = (data as Restaurant[]) || [];
+    }
+
+    // 1. Highlights
+    const highlights = allRestaurants.filter(r => r.is_verified).slice(0, 5);
+
+    // 2. Promotions
+    const cheapPlaces = allRestaurants
+        .filter(r => r.price_level === 1)
+        .sort((a, b) => b.rating_avg - a.rating_avg)
+        .slice(0, 5);
+
+    const promotions: Coupon[] = cheapPlaces.map(r => ({
+        id: `promo-${r.id}`,
+        restaurant_id: r.id,
+        title: `Oferta em ${r.name}`,
+        description: r.categories.includes('Brasileira') ? 'Almoço com desconto' : 'Desconto especial',
+        discount_type: 'percentage' as const,
+        discount_value: 20,
+        min_order_value: 30,
+        max_redemptions: 100,
+        current_redemptions: 12,
+        code: `DEGUSTE20`,
+        valid_from: new Date().toISOString(),
+        valid_until: new Date(Date.now() + 86400000).toISOString(),
+        status: 'active' as const,
+        created_at: new Date().toISOString(),
+    }));
+
+    // 3. Videos
+    const famousPlaces = [...allRestaurants]
+        .sort((a, b) => b.rating_count - a.rating_count)
+        .slice(0, 10);
+
+    const videos: Video[] = famousPlaces.map(r => {
+        let thumb_url = 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&q=80';
+        try {
+            if (r.photos) {
+                const parsed = typeof r.photos === 'string' ? JSON.parse(r.photos) : r.photos;
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    thumb_url = parsed[0].url || thumb_url;
+                }
+            }
+        } catch (e) { }
+
+        return {
+            id: `video-${r.id}`,
+            restaurant_id: r.id,
+            url: '',
+            video_url: '',
+            thumbnail_url: thumb_url,
+            title: `Melhor ${r.categories[0] || 'Lugar'}?`,
+            description: `Fomos conhecer o famoso ${r.name}!`,
+            views_count: r.rating_count * 153,
+            likes_count: r.rating_count * 12,
+            duration_seconds: 15,
+            tags: r.categories.slice(0, 3).map(c => c.toLowerCase()),
+            status: 'active' as const,
+            created_at: new Date().toISOString(),
+            restaurant: r,
+            is_photo: true
+        };
+    });
+
+    // 4. Rankings
+    const rankings: RankedCategory[] = [];
+    for (const config of RANKING_CONFIGS) {
+        let filtered = allRestaurants;
+        if (config.categoryFilter) {
+            filtered = allRestaurants.filter(r =>
+                r.categories?.some(c => c.toLowerCase().includes(config.categoryFilter.toLowerCase()))
+            );
+        }
+        const sorted = [...filtered]
+            .sort((a, b) => (b.rating_avg || 0) - (a.rating_avg || 0))
+            .slice(0, 5);
+
+        if (sorted.length >= 2) {
+            rankings.push({
+                title: config.title,
+                emoji: config.emoji,
+                categoryFilter: config.categoryFilter,
+                restaurants: sorted
+            });
+        }
+    }
+
+    return { highlights, promotions, videos, rankings };
+}
+
 export async function getHighlights(lat?: number | null, lng?: number | null): Promise<Restaurant[]> {
     if (supabase) {
         if (lat != null && lng != null) {
@@ -251,13 +373,6 @@ export async function getMenuItems(restaurantId: string): Promise<MenuItem[]> {
     return data as MenuItem[];
 }
 
-const RANKING_CONFIGS = [
-    { title: 'Top 5 Pizzarias', emoji: '🍕', categoryFilter: 'Pizzaria' },
-    { title: 'Melhores Avaliados', emoji: '⭐', categoryFilter: '' }, // all categories
-    { title: 'Top 5 Hamburguerias', emoji: '🍔', categoryFilter: 'Hamburgueria' },
-    { title: 'Top 5 Japonesa', emoji: '🍣', categoryFilter: 'Japonesa' },
-    { title: 'Top 5 Bares', emoji: '🍺', categoryFilter: 'Bar' },
-];
 
 export async function getRankedCategories(lat?: number | null, lng?: number | null): Promise<RankedCategory[]> {
     if (!supabase) return [];

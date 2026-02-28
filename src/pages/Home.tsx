@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getHighlights, getPromotions, getVideos, getRankedCategories } from '@/lib/api/restaurants';
+import { getHomeFeed } from '@/lib/api/restaurants';
 import { Restaurant, Coupon, Video, RankedCategory } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from '@/contexts/LocationContext';
@@ -29,15 +29,10 @@ export default function Home() {
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // GPS auto-fill removed — user must select city manually
-
-  // Helper to get best available coordinates — prioritizes real GPS, falls back to city center
   const getCityCoords = () => {
-    // Use real GPS location when available
     if (latitude != null && longitude != null) {
       return { lat: latitude, lng: longitude };
     }
-    // Fallback to selected city center coords
     const stateObj = availableLocations.find(l => l.state === selectedState);
     const city = stateObj?.cities.find(c => c.name === selectedCity);
     return city ? { lat: city.lat, lng: city.lng } : { lat: -23.0333, lng: -45.5500 };
@@ -68,12 +63,8 @@ export default function Home() {
         const fetchLat = coords.lat;
         const fetchLng = coords.lng;
 
-        const [h, p, v, rk] = await Promise.all([
-          getHighlights(fetchLat, fetchLng),
-          getPromotions(fetchLat, fetchLng),
-          getVideos(fetchLat, fetchLng),
-          getRankedCategories(fetchLat, fetchLng)
-        ]);
+        const { highlights: h, promotions: p, videos: v, rankings: rk } = await getHomeFeed(fetchLat, fetchLng);
+
         setHighlights(h);
         setPromotions(p);
         setVideos(v);
