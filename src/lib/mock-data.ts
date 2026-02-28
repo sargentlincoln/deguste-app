@@ -22,6 +22,8 @@ export const MOCK_USER: User = {
         total_savings: 0,
         reviews_count: 0,
     },
+    points: 0,
+    level: '1',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
 };
