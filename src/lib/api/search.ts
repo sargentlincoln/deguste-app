@@ -205,11 +205,6 @@ export async function searchRestaurants(filters: SearchFilters): Promise<SearchR
             }
         }
 
-        // Filter out closed establishments from Supabase results too
-        results = results.filter(r => {
-            if (!r.opening_hours || typeof r.opening_hours !== 'object') return true;
-            return isRestaurantOpen(r).isOpen;
-        });
 
         // Merge Supabase results with Google Places (Supabase first = priority)
         const allResults = [...results, ...googlePlaces];
