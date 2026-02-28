@@ -198,13 +198,16 @@ export default function Home() {
               }}
             >
               {availableLocations.length > 0 ? (
-                availableLocations.map(loc => (
-                  <option key={loc.state} className="bg-white dark:bg-card-dark text-text-dark dark:text-white" value={loc.state}>
-                    {loc.state}
-                  </option>
-                ))
+                <>
+                  <option className="bg-white dark:bg-card-dark text-text-dark dark:text-white" value="" disabled>ESTADO...</option>
+                  {availableLocations.map(loc => (
+                    <option key={loc.state} className="bg-white dark:bg-card-dark text-text-dark dark:text-white" value={loc.state}>
+                      {loc.state}
+                    </option>
+                  ))}
+                </>
               ) : (
-                <option className="bg-white dark:bg-card-dark text-text-dark dark:text-white" value="SP">SP</option>
+                <option className="bg-white dark:bg-card-dark text-text-dark dark:text-white" value="">ESTADO...</option>
               )}
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
@@ -222,14 +225,17 @@ export default function Home() {
                 if (coords) {
                   setSelectedCity(coords.name);
                   setCoordinates(coords.lat, coords.lng);
+                } else {
+                  setSelectedCity(e.target.value);
                 }
               }}
             >
+              <option className="bg-white dark:bg-card-dark text-text-dark dark:text-white" value="" disabled>CIDADE...</option>
               {availableLocations.find(l => l.state === selectedState)?.cities.map(city => (
                 <option key={city.name} className="bg-white dark:bg-card-dark text-text-dark dark:text-white" value={city.name}>
                   {city.name}
                 </option>
-              )) || <option className="bg-white dark:bg-card-dark text-text-dark dark:text-white" value="Taubaté">Taubaté</option>}
+              ))}
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
               <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 text-[18px]">expand_more</span>
