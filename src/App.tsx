@@ -29,7 +29,7 @@ export default function App() {
               <ChatAssistant />
               <Layout>
                 <Routes>
-                  <Route path="/" element={<Home />} />
+                  <Route path="/" element={<Splash />} />
                   <Route path="/home" element={<Home />} />
                   <Route path="/search" element={<Search />} />
                   <Route path="/search/results" element={<SearchResults />} />

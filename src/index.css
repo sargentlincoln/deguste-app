@@ -66,6 +66,18 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@layer base {
+  body {
+    background-color: var(--color-background-light);
+    color: var(--color-text-dark);
+  }
+
+  :is(.dark body) {
+    background-color: var(--color-background-dark);
+    color: var(--color-text-light);
+  }
+}
+
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
