@@ -214,9 +214,8 @@ export default function RestaurantDetails() {
         source: 'google_review' as const,
         is_cover: false
       }));
-    // Limit to max 4 photos to prevent massive Google Places API billing 
-    // ($0.007 per photo loaded in the UI)
-    allPhotos = [...normalizedRestaurant.photos, ...reviewPhotos].slice(0, 4);
+    // Limit to max 10 photos to ensure good performance and variety
+    allPhotos = [...normalizedRestaurant.photos, ...reviewPhotos].slice(0, 10);
     attributes = normalizedRestaurant.attributes || {};
   } catch (e) {
     console.error('Error normalizing restaurant data:', e);
